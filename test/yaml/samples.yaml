@@ -1,4 +1,5 @@
 # Sample YAML file for testing
+---
 person:
   name: John Doe
   age: 30
@@ -27,24 +28,25 @@ person:
     notifications: true
 ---
 person:
-  name: Jane Doe
-  age: 37
+  name: Jane Smith
+  age: 28
   is_active: true
   addresses:
-    - street: 123 Fake St
-      city: Nowhere's Ville
-      zip: '00123'
+    - street: 789 Oak Ave
+      city: Metropolis
+      zip: '12346'
   tags:
     - manager
-    - mentor
+    - leader
   skills:
     programming:
-      - language: Python
-        level: Intermediate
-      - language: C++
+      - language: Java
         level: Expert
+      - language: JavaScript
+        level: Advanced
     languages:
-      - Spanish
+      - English
+      - French
   preferences:
     theme: light
     notifications: false
