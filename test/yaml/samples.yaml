@@ -1,0 +1,50 @@
+# Sample YAML file for testing
+person:
+  name: John Doe
+  age: 30
+  is_active: true
+  addresses:
+    - street: 123 Main St
+      city: Metropolis
+      zip: '12345'
+    - street: 456 Work Blvd
+      city: Gotham
+      zip: '67890'
+  tags:
+    - developer
+    - mentor
+  skills:
+    programming:
+      - language: Python
+        level: Expert
+      - language: C++
+        level: Intermediate
+    languages:
+      - English
+      - Spanish
+  preferences:
+    theme: dark
+    notifications: true
+---
+person:
+  name: Jane Doe
+  age: 37
+  is_active: true
+  addresses:
+    - street: 123 Fake St
+      city: Nowhere's Ville
+      zip: '00123'
+  tags:
+    - manager
+    - mentor
+  skills:
+    programming:
+      - language: Python
+        level: Intermediate
+      - language: C++
+        level: Expert
+    languages:
+      - Spanish
+  preferences:
+    theme: light
+    notifications: false
