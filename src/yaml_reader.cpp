@@ -205,6 +205,9 @@ unique_ptr<FunctionData> YAMLReader::YAMLReadRowsBind(ClientContext &context,
     if (input.named_parameters.count("multi_document")) {
         options.multi_document = input.named_parameters["multi_document"].GetValue<bool>();
     }
+    if (input.named_parameters.count("expand_root_sequence")) {
+        options.expand_root_sequence = input.named_parameters["expand_root_sequence"].GetValue<bool>();
+    }
 
     // Create bind data
     auto result = make_uniq<YAMLReadRowsBindData>(file_path, options);
@@ -252,37 +255,78 @@ unique_ptr<FunctionData> YAMLReader::YAMLReadRowsBind(ClientContext &context,
         return std::move(result);
     }
 
-    // Extract schema from all documents
-    unordered_map<string, LogicalType> column_types;
-
-    // Process each document to build the schema
+    // Vector to store all the row data items
+    vector<YAML::Node> row_nodes;
+    
+    // Process each document
     for (auto &doc : result->yaml_docs) {
-        if (doc.IsMap()) {
-            // Process each top-level key as a potential column
-            for (auto it = doc.begin(); it != doc.end(); ++it) {
-                std::string key = it->first.Scalar();
-                YAML::Node value = it->second;
-
-                // Detect the type of this value
-                LogicalType value_type = DetectYAMLType(value);
-
-                // If we already have this column, reconcile the types (use most general)
-                if (column_types.count(key)) {
-                    // For now, just use VARCHAR if there's a conflict
-                    if (column_types[key].id() != value_type.id()) {
-                        column_types[key] = LogicalType::VARCHAR;
-                    }
-                } else {
-                    column_types[key] = value_type;
+        if (doc.IsSequence() && options.expand_root_sequence) {
+            // Each item in the sequence becomes a row
+            for (size_t i = 0; i < doc.size(); i++) {
+                if (doc[i].IsMap()) {  // Only add map nodes as rows
+                    row_nodes.push_back(doc[i]);
                 }
             }
+        } else {
+            // Document itself becomes a row
+            if (doc.IsMap()) {  // Only add map nodes as rows
+                row_nodes.push_back(doc);
+            }
         }
+    }
+    
+    // Replace original docs with processed row nodes
+    result->yaml_docs = row_nodes;
+    
+    // Extract schema from all row nodes
+    unordered_map<string, LogicalType> column_types;
+    
+    // Better schema extraction
+    for (auto &node : result->yaml_docs) {
+        // Process each top-level key as a potential column
+        for (auto it = node.begin(); it != node.end(); ++it) {
+            std::string key = it->first.Scalar();
+            YAML::Node value = it->second;
+            
+            LogicalType value_type;
+            if (options.auto_detect_types) {
+                value_type = DetectYAMLType(value);
+            } else {
+                value_type = LogicalType::VARCHAR;
+            }
+            
+            // If we already have this column, reconcile the types
+            if (column_types.count(key)) {
+                if (column_types[key].id() != value_type.id()) {
+                    column_types[key] = LogicalType::VARCHAR;
+                }
+            } else {
+                column_types[key] = value_type;
+            }
+        }
+    }
+    
+    // Add a fallback column if none were found
+    if (column_types.empty() && !result->yaml_docs.empty()) {
+        column_types["value"] = options.auto_detect_types ? 
+            DetectYAMLType(result->yaml_docs[0]) : LogicalType::VARCHAR;
     }
 
     // Build the schema
     for (auto &entry : column_types) {
         names.push_back(entry.first);
         return_types.push_back(entry.second);
+    }
+
+    if (names.empty() && return_types.empty() && !result->yaml_docs.empty()) {
+        // If we couldn't extract any columns but have data, add a fallback column
+        names.emplace_back("value");
+        
+        if (options.auto_detect_types) {
+            return_types.emplace_back(DetectYAMLType(result->yaml_docs[0]));
+        } else {
+            return_types.emplace_back(LogicalType::VARCHAR);
+        }
     }
 
     // Save the schema
@@ -487,6 +531,7 @@ void YAMLReader::RegisterFunction(DatabaseInstance &db) {
     read_yaml.named_parameters["ignore_errors"] = LogicalType::BOOLEAN;
     read_yaml.named_parameters["maximum_object_size"] = LogicalType::BIGINT;
     read_yaml.named_parameters["multi_document"] = LogicalType::BOOLEAN;
+    read_yaml.named_parameters["expand_root_sequence"] = LogicalType::BOOLEAN;
     ExtensionUtil::RegisterFunction(db, read_yaml);
 }
 

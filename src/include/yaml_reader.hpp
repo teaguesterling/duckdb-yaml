@@ -16,6 +16,7 @@ public:
         bool ignore_errors = false;
         size_t maximum_object_size = 16777216;  // 16MB default
         bool multi_document = true;             // Whether to handle multi-document YAML files
+        bool expand_root_sequence = true;       // Whether to expand top-level sequences into rows
     };
 
     // Register the read_yaml table function
