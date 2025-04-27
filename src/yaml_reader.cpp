@@ -1,11 +1,10 @@
-#include "yaml_readers/yaml_reader.hpp"
+#include "yaml_types.hpp"
+#include "yaml_reader.hpp"
 #include "duckdb/catalog/catalog_entry/table_function_catalog_entry.hpp"
 #include "duckdb/common/file_system.hpp"
 #include "duckdb/function/table_function.hpp"
 #include "duckdb/parser/parsed_data/create_table_function_info.hpp"
-#include "duckdb/common/serializer/format_serializer.hpp"
 #include "duckdb/common/string_util.hpp"
-#include "yaml_types.hpp"
 
 namespace duckdb {
 
@@ -33,7 +32,7 @@ std::vector<YAML::Node> YAMLReader::ReadYAMLFromFile(ClientContext &context, con
             YAML::Node doc;
             YAML::Parser parser(yaml_stream);
             
-            while (parser.GetNextDocument(doc)) {
+            while (parser.HandleNextDocument(doc)) {
                 yaml_nodes.push_back(doc);
             }
             
