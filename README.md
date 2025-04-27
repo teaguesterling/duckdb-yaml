@@ -2,6 +2,10 @@
 
 This extension allows DuckDB to read YAML files directly into tables. It provides a simple interface for accessing YAML data within SQL queries.
 
+## Meta Considerations
+
+At a more meta level, this extension is an exercise in having Claude.ai create an extension for me, using other extensions as examples, while I try to delay diving into the code myself for as long as possible. The inital chat I used to start this project is [shared here](https://claude.ai/share/b7778f6e-cce4-4bba-9809-8682468a6940). Eventually, I created a project with integrations into this GitHub repository, which prevents additional sharing, but I will add the chats to this repository for reference.
+
 ## Features
 
 - Read YAML files into DuckDB tables

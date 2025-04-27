@@ -4,6 +4,7 @@
 #include "duckdb/function/table_function.hpp"
 #include "duckdb/parser/parsed_data/create_table_function_info.hpp"
 #include "duckdb/common/string_util.hpp"
+#include "duckdb/main/extension_util.hpp"
 
 namespace duckdb {
 
@@ -289,9 +290,8 @@ void YAMLReader::RegisterFunction(DatabaseInstance &db) {
     read_yaml.named_parameters["maximum_object_size"] = LogicalType::BIGINT;
     read_yaml.named_parameters["multi_document"] = LogicalType::BOOLEAN;
     
-    // Register the function
-    CreateTableFunctionInfo read_yaml_info(read_yaml);
-    db.GetCatalog().CreateTableFunction(db.GetCatalog().GetSystemTransaction(), &read_yaml_info);
+    // Register the function using ExtensionUtil instead of directly accessing the catalog
+    ExtensionUtil::RegisterFunction(db, read_yaml);
 }
 
 } // namespace duckdb
