@@ -1,6 +1,5 @@
 #define DUCKDB_EXTENSION_MAIN
 
-#include "yaml_extension.hpp"
 #include "duckdb.hpp"
 #include "duckdb/common/exception.hpp"
 #include "duckdb/common/string_util.hpp"
@@ -10,6 +9,11 @@
 
 // OpenSSL linked through vcpkg
 #include <openssl/opensslv.h>
+
+#include "yaml_extension.hpp"
+#include "yaml_functions.hpp"
+#include "yaml_types.hpp"
+#include "yaml_reader.hpp"
 
 namespace duckdb {
 
@@ -34,6 +38,15 @@ inline void YamlOpenSSLVersionScalarFun(DataChunk &args, ExpressionState &state,
 }
 
 static void LoadInternal(DatabaseInstance &instance) {
+    // Register the YAML type
+    YAMLTypes::Register(instance);
+    
+    // Register YAML functions
+    YAMLFunctions::Register(instance);
+    
+    // Register YAML reader
+    YAMLReader::RegisterFunction(instance);
+
     // Register a scalar function
     auto yaml_scalar_function = ScalarFunction("yaml", {LogicalType::VARCHAR}, LogicalType::VARCHAR, YamlScalarFun);
     ExtensionUtil::RegisterFunction(instance, yaml_scalar_function);
