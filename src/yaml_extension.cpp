@@ -11,8 +11,6 @@
 #include <openssl/opensslv.h>
 
 #include "yaml_extension.hpp"
-#include "yaml_functions.hpp"
-#include "yaml_types.hpp"
 #include "yaml_reader.hpp"
 
 namespace duckdb {
@@ -38,23 +36,12 @@ inline void YamlOpenSSLVersionScalarFun(DataChunk &args, ExpressionState &state,
 }
 
 static void LoadInternal(DatabaseInstance &instance) {
-    // Register the YAML type
-    YAMLTypes::Register(instance);
-    
-    // Register YAML functions
-    YAMLFunctions::Register(instance);
-    
     // Register YAML reader
     YAMLReader::RegisterFunction(instance);
 
     // Register a scalar function
     auto yaml_scalar_function = ScalarFunction("yaml", {LogicalType::VARCHAR}, LogicalType::VARCHAR, YamlScalarFun);
     ExtensionUtil::RegisterFunction(instance, yaml_scalar_function);
-
-    // Register another scalar function
-    auto yaml_openssl_version_scalar_function = ScalarFunction("yaml_openssl_version", {LogicalType::VARCHAR},
-                                                LogicalType::VARCHAR, YamlOpenSSLVersionScalarFun);
-    ExtensionUtil::RegisterFunction(instance, yaml_openssl_version_scalar_function);
 }
 
 void YamlExtension::Load(DuckDB &db) {

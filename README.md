@@ -1,13 +1,63 @@
-# Yaml
+# YAML Extension for DuckDB
 
-This repository is based on https://github.com/duckdb/extension-template, check it out if you want to build and ship your own DuckDB extension.
+This extension allows DuckDB to read YAML files directly into tables. It provides a simple interface for accessing YAML data within SQL queries.
 
----
+## Features
 
-This extension, Yaml, allow you to ... <extension_goal>.
+- Read YAML files into DuckDB tables
+- Auto-detect data types from YAML content
+- Support for multi-document YAML files
+- Robust error handling
 
+## Usage
+
+### Loading the Extension
+
+```sql
+LOAD yaml;
+
+-- Read from a file
+SELECT * FROM read_yaml('path/to/file.yaml');
+
+-- Read from a literal string
+SELECT * FROM read_yaml('
+name: John
+age: 30
+');
+
+-- Auto-detect types (default: true)
+SELECT * FROM read_yaml('file.yaml', auto_detect=true);
+
+-- Handle multiple YAML documents (default: true)
+SELECT * FROM read_yaml('file.yaml', multi_document=true);
+
+-- Ignore parsing errors (default: false)
+SELECT * FROM read_yaml('file.yaml', ignore_errors=true);
+
+-- Set maximum file size in bytes (default: 16MB)
+SELECT * FROM read_yaml('file.yaml', maximum_object_size=1048576);
+
+-- Access scalar values
+SELECT yaml->name, yaml->age FROM yaml_table;
+
+-- Access array elements
+SELECT yaml->tags[0], yaml->tags[1] FROM yaml_table;
+
+-- Access nested structures
+SELECT yaml->person->addresses[0]->city FROM yaml_table;
+
+```
+
+## Limitations
+
+This is an alpha version with the following limitations:
+
+ - Limited type detection
+ - No support for YAML anchors and aliases
+ - No YAML to JSON conversion
 
 ## Building
+
 ### Managing dependencies
 DuckDB extensions uses VCPKG for dependency management. Enabling VCPKG is very simple: follow the [installation instructions](https://vcpkg.io/en/getting-started) or just run the following:
 ```shell
@@ -32,55 +82,9 @@ The main binaries that will be built are:
 - `unittest` is the test runner of duckdb. Again, the extension is already linked into the binary.
 - `yaml.duckdb_extension` is the loadable binary as it would be distributed.
 
-## Running the extension
-To run the extension code, simply start the shell with `./build/release/duckdb`.
-
-Now we can use the features from the extension directly in DuckDB. The template contains a single scalar function `yaml()` that takes a string arguments and returns a string:
-```
-D select yaml('Jane') as result;
-┌───────────────┐
-│    result     │
-│    varchar    │
-├───────────────┤
-│ Yaml Jane 🐥 │
-└───────────────┘
-```
-
 ## Running the tests
 Different tests can be created for DuckDB extensions. The primary way of testing DuckDB extensions should be the SQL tests in `./test/sql`. These SQL tests can be run using:
 ```sh
 make test
 ```
 
-### Installing the deployed binaries
-To install your extension binaries from S3, you will need to do two things. Firstly, DuckDB should be launched with the
-`allow_unsigned_extensions` option set to true. How to set this will depend on the client you're using. Some examples:
-
-CLI:
-```shell
-duckdb -unsigned
-```
-
-Python:
-```python
-con = duckdb.connect(':memory:', config={'allow_unsigned_extensions' : 'true'})
-```
-
-NodeJS:
-```js
-db = new duckdb.Database(':memory:', {"allow_unsigned_extensions": "true"});
-```
-
-Secondly, you will need to set the repository endpoint in DuckDB to the HTTP url of your bucket + version of the extension
-you want to install. To do this run the following SQL query in DuckDB:
-```sql
-SET custom_extension_repository='bucket.s3.eu-west-1.amazonaws.com/<your_extension_name>/latest';
-```
-Note that the `/latest` path will allow you to install the latest extension version available for your current version of
-DuckDB. To specify a specific version, you can pass the version instead.
-
-After running these steps, you can install and load your extension using the regular INSTALL/LOAD commands in DuckDB:
-```sql
-INSTALL yaml
-LOAD yaml
-```
