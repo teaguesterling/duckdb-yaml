@@ -17,23 +17,32 @@ public:
         size_t maximum_object_size = 16777216;  // 16MB default
         bool multi_document = true;             // Whether to handle multi-document YAML files
     };
-    
+
     // Register the read_yaml table function
     static void RegisterFunction(DatabaseInstance &db);
 
 private:
+    // Row-based YAML reading functions
+    static unique_ptr<FunctionData> YAMLReadRowsBind(ClientContext &context,
+                                                  TableFunctionBindInput &input,
+                                                  vector<LogicalType> &return_types,
+                                                  vector<string> &names);
+
+    static void YAMLReadRowsFunction(ClientContext &context, TableFunctionInput &data_p,
+                                  DataChunk &output);
+
     // Read YAML from file and convert to DuckDB values
-    static unique_ptr<FunctionData> YAMLReadBind(ClientContext &context, 
+    static unique_ptr<FunctionData> YAMLReadBind(ClientContext &context,
                                               TableFunctionBindInput &input,
-                                              vector<LogicalType> &return_types, 
+                                              vector<LogicalType> &return_types,
                                               vector<string> &names);
-    
-    static void YAMLReadFunction(ClientContext &context, TableFunctionInput &data_p, 
+
+    static void YAMLReadFunction(ClientContext &context, TableFunctionInput &data_p,
                               DataChunk &output);
-    
+
     // Helper to detect logical type from YAML node
     static LogicalType DetectYAMLType(YAML::Node node);
-    
+
     // Helper to convert YAML node to DuckDB value
     static Value YAMLNodeToValue(YAML::Node node, LogicalType target_type);
 };
