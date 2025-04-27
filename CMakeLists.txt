@@ -19,7 +19,7 @@ set(EXTENSION_SOURCES
   src/yaml_extension.cpp
   src/yaml_types.cpp
   src/yaml_functions.cpp
-#  src/yaml_reader.cpp
+  src/yaml_reader.cpp
 )
 
 build_static_extension(${TARGET_NAME} ${EXTENSION_SOURCES})

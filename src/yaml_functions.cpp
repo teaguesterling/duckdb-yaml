@@ -56,7 +56,7 @@ void YAMLFunctions::RegisterConversionFunctions(DatabaseInstance &db) {
                     try {
                         // Convert YAML to JSON using YAMLTypes helper
                         ClientContext &context = state.GetContext();
-                        return YAMLTypes::CastYAMLToJSON(context, yaml_str, result);
+                        return YAMLTypes::CastYAMLToJSON(context, yaml_str);
                     } catch (const std::exception &e) {
                         throw InvalidInputException("Error converting YAML to JSON: %s", e.what());
                     }
@@ -84,7 +84,7 @@ void YAMLFunctions::RegisterConversionFunctions(DatabaseInstance &db) {
                         Value json_val(json_str);
                         
                         // Convert to YAML
-                        return YAMLTypes::CastValueToYAML(context, json_val, result);
+                        return YAMLTypes::CastValueToYAML(context, json_val);
                     } catch (const std::exception &e) {
                         throw InvalidInputException("Error converting JSON to YAML: %s", e.what());
                     }
