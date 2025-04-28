@@ -12,41 +12,58 @@ We are implementing a YAML extension for DuckDB, similar to the existing JSON ex
 
 ## Current Implementation Status
 
-- We've created a simplified version that focuses only on the core reading functionality
-- The implementation includes the YAMLReader class that provides the read_yaml function
-- We also have an object-based reader (read_yaml_objects) for compatibility with JSON-like workflows
-- Basic type detection and conversion between YAML and DuckDB types is implemented
-- Multi-document YAML support is included
+- We've created a solid implementation of the YAML reader functionality
+- The implementation includes the YAMLReader class with read_yaml and read_yaml_objects functions
+- The read_yaml function creates a table with multiple rows from YAML documents
+- The read_yaml_objects function maintains document structure as a single row per document
+- Multi-document YAML support is fully implemented
 - Top-level sequence handling is implemented, treating sequence items as rows
-- Error handling is basic but functional
-- Testing infrastructure is set up using actual YAML files in test/yaml/
+- File globbing and file list support is implemented
+- Improved error handling with partial recovery of valid documents in files with errors
+- Comprehensive parameter handling with error checking
+- Test coverage for basic functionality and error handling
+
+## Recent Changes and Findings
+
+1. **Enhanced File Handling**:
+   - Added support for providing a list of file paths (e.g., `read_yaml(['a.yaml', 'b.yaml'])`)
+   - Implemented globbing using built-in `fs.Glob` functionality
+   - Added support for both `.yaml` and `.yml` extensions
+
+2. **Improved Error Recovery**:
+   - Implemented a robust recovery mechanism for partially invalid YAML files
+   - Enhanced the `RecoverPartialYAMLDocuments` function to handle document separators
+   - Made error handling more granular (per-file and per-document)
+
+3. **Code Modernization**:
+   - Replaced C-style strings with modern C++ string objects
+   - Added const qualifiers and references for better performance and safety
+   - Made function signatures more consistent with DuckDB's style
+
+4. **Testing Findings**:
+   - Parameter type checking is too permissive (e.g., `auto_detect='yes'` passes)
+   - Expected error messages don't always match actual DuckDB errors
+   - Duplicate parameter detection isn't working as expected
+   - Some memory management could be improved with more idiomatic C++
 
 ## Design Decisions
 
 - We're using yaml-cpp for parsing YAML files
-- We've deliberately simplified the implementation to focus on debugging the core reader functionality first
-- We're using test-driven development, starting with basic tests and adding more complex ones
 - We're using a similar architecture to DuckDB's JSON extension but simplified
 - We're storing each YAML document as a single row in the output table
 - We're prioritizing correctness and clarity over optimization initially
 - We're using DuckDB's unittest framework for testing
+- We're providing similar file handling capabilities to the JSON extension
+- We've decided to defer some parameter validation improvements for a future update
 
 ## Questions and Concerns
 
 1. **Performance**: How will the extension handle very large YAML files? Should we implement streaming parsing?
 2. **Type Detection**: The current type detection is basic. How comprehensive should it be?
-3. **Error Handling**: How should we handle YAML parsing errors? Should we provide detailed error messages?
-4. **Anchors and Aliases**: YAML-specific features like anchors and aliases aren't currently supported. How important are they?
-5. **Integration with JSON**: How tightly should this integrate with DuckDB's JSON functionality?
-6. **Inline YAML Support**: Should we add a separate `yaml` function for handling inline YAML strings, similar to DuckDB's approach with JSON?
-
-## Implementation Challenges
-
-- Handling nested YAML structures and converting them to DuckDB types
-- Supporting multi-document YAML files
-- Efficient memory usage for large files
-- Proper error handling and recovery
-- Comprehensive type detection and conversion
+3. **Anchors and Aliases**: YAML-specific features like anchors and aliases aren't currently supported. How important are they?
+4. **Integration with JSON**: How tightly should this integrate with DuckDB's JSON functionality?
+5. **Inline YAML Support**: Should we add a separate `yaml` function for handling inline YAML strings?
+6. **Parameter Validation**: How strict should we be with parameter type checking?
 
 ## Future Features to Add
 
@@ -59,15 +76,7 @@ We are implementing a YAML extension for DuckDB, similar to the existing JSON ex
 7. **Streaming Processing**: For large files
 8. **Anchor and Alias Support**: For YAML-specific features
 9. **Inline YAML Function**: Add a `yaml()` function for parsing inline YAML strings
-10. **Smarter Schema Detection**: Improve handling of heterogeneous documents
-
-## Development Strategy
-
-1. Get the basic reader working first
-2. Add comprehensive tests
-3. Add the YAML type system
-4. Add conversion to/from JSON
-5. Add more advanced features
+10. **Parameter Validation Improvements**: Stricter type checking, duplicate detection
 
 ## Technical Notes
 
@@ -77,22 +86,9 @@ We are implementing a YAML extension for DuckDB, similar to the existing JSON ex
 - Type detection is based on the YAML node type and content
 - We use vectors of YAML nodes to support multi-document YAML files
 - Reading top-level sequences treats each sequence item as a separate row
-- DuckDB-specific syntax details:
-  - Structs use dot notation (e.g., `person.name`) not arrow operators (`person->name`)
-  - Lists are 1-indexed (e.g., `list[1]` for first element, not `list[0]`)
-
-### yaml-cpp Integration Considerations
-- yaml-cpp provides a DOM-style API for parsing YAML (unlike SAX parsing)
-- The YAML::Node class represents different YAML node types (Scalar, Sequence, Map)
-- Need to handle yaml-cpp exceptions and translate them to DuckDB exceptions
-- Memory management: yaml-cpp loads entire documents into memory
-- YAML has features like anchors, aliases, and tags that add complexity compared to JSON
-
-### Testing Approach
-- Test files organized in a dedicated test/yaml/ directory
-- Test cases in test/sql/ directory follow DuckDB's SQLLogicTest conventions
-- Tests cover basic functionality, complex structures, multi-document, and top-level sequences
-- Tests use actual files rather than inline YAML strings
+- Error recovery now properly handles partially invalid documents
+- File handling supports both individual files and lists of files
+- Current parameter validation may be too permissive in some cases
 
 ## Reminders for Conversation Continuity
 
@@ -100,6 +96,7 @@ We are implementing a YAML extension for DuckDB, similar to the existing JSON ex
 - Check the test files to understand what functionality is already tested
 - Pay attention to the build output for any compilation or runtime errors
 - When adding new features, update the documentation accordingly
+- Parameter validation and error handling need further improvements
 
 ## Observations About the Prompter
 
@@ -111,11 +108,16 @@ The prompter appears to have significant experience with DuckDB extension develo
 - Collaborative problem-solving, valuing technical insights and recommendations
 - Clear organization of code and development priorities
 - Explicit knowledge preservation (hence this document)
+- Thorough testing with comprehensive test cases
+- Code that follows established DuckDB extension patterns and idioms
 
-They're using me as a technical partner to help implement and debug this extension, with a focus on practical results while maintaining good software engineering practices. They value both concrete implementation help and higher-level architectural guidance.
+The prompter values both practical implementation help and higher-level architectural guidance, with a focus on creating a robust, user-friendly extension. They appreciate deliberate decision-making and documentation of rationale for future reference.
 
 ## Update Log
 
 - Initial version: Created during first conversation about simplifying the implementation
 - Update 1: Added observations about the prompter, expanded technical notes about yaml-cpp integration, and added more detail on design decisions
 - Update 2: Updated based on implementation progress - added information about test file organization, DuckDB-specific syntax for structs and lists, handling of top-level sequences, and added potential future features
+- Update 3: Updated after implementing robust parameter handling and error handling - marked completed tasks, updated current status, and refined next steps
+- Update 4: Updated with findings from our implementation of file globbing and file list support, improved error recovery, and modernizing the code with C++ best practices
+- Update 5: Added testing findings regarding parameter validation, error messages, duplicate parameters, and idiomatic C++ usage. Updated with planned improvements that have been documented in TODO.md for future implementation
